@@ -276,7 +276,7 @@ function overwriteProxyGroups(params) {
     {
       name: "ChatGPT",
       type: "select",
-      url: getIconForGroup("ChatGPT"),
+      url: getTestUrlForGroup("ChatGPT"),
       interval: 300,
       tolerance: 50,
       proxies: [
@@ -284,6 +284,7 @@ function overwriteProxyGroups(params) {
           `${region.code} - 自动选择`,
         ]),
       ],
+      icon: getIconForGroup("ChatGPT"),
     },
 
     ...["Steam", "Telegram", "Claude"].map(groupName => ({
