@@ -218,7 +218,7 @@ function overwriteProxyGroups(params) {
   const groups = [
     {
       name: proxyName, 
-      type: "select", 
+      type: "select",
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/adjust.svg",
       proxies: ["自动选择", "手动选择", "负载均衡 (散列)", "负载均衡 (轮询)", "DIRECT"],
@@ -276,7 +276,7 @@ function overwriteProxyGroups(params) {
     {
       name: "ChatGPT",
       type: "select",
-      url: getTestUrlForGroup("ChatGPT"),
+      url: getIconForGroup("ChatGPT"),
       interval: 300,
       tolerance: 50,
       proxies: [
