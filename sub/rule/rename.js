@@ -39,8 +39,8 @@
  * [blockquic] blockquic=on 阻止; blockquic=off 不阻止
  */
 
-// const inArg = {'blkey':'iplc+GPT>GPTnewName+NF+IPLC', 'flag':true };
-const inArg = $arguments; // console.log(inArg)
+const inArg = {'flag':true };
+// const inArg = $arguments; // console.log(inArg)
 const nx = inArg.nx || false,
   bl = inArg.bl || false,
   nf = inArg.nf || false,
@@ -137,6 +137,15 @@ function ObjKA(i) {
   GetK = true
   AMK = Object.entries(i)
 }
+
+pro = [
+{"name":"⚫︎ 此订阅为aggregator机场订阅","server":"9.9.9.9","port":46245,"type":"vless","uuid":"412ae33c-a9fc-46c3-8f1f-02c0da23688c","tls":true,"tfo":false,"network":"ws","ws-opts":{"path":"/?ed=2560","headers":{"Host":"www.com"}},"udp":true,"servername":"www.com"},
+{"name":"⚫︎ 网址 https://mxlsub.me","server":"9.9.9.9","port":39869,"type":"vless","uuid":"412ae33c-a9fc-46c3-8f1f-02c0da23688c","tls":true,"tfo":false,"network":"ws","ws-opts":{"path":"/?ed=2560","headers":{"Host":"www.com"}},"udp":true,"servername":"www.com"},
+{"name":"⚫︎ 请2小时更新一次","server":"9.9.9.9","port":44149,"type":"vless","uuid":"412ae33c-a9fc-46c3-8f1f-02c0da23688c","tls":true,"tfo":false,"network":"ws","ws-opts":{"path":"/?ed=2560","headers":{"Host":"www.com"}},"udp":true,"servername":"www.com"},
+{"name":"🇨🇳 台湾","server":"qrzv.youxuan.wiki","port":2086,"type":"vless","uuid":"75bb6ce0-7ff4-4313-896d-6c2681890894","tls":false,"tfo":false,"network":"ws","ws-opts":{"path":"/youxuan","headers":{"Host":"tw2.youxuan.wiki"}},"udp":true},
+{"name":"🇨🇳 台湾 2","server":"qrzv.youxuan.wiki","port":2086,"type":"vless","uuid":"cb09a5cb-5087-4562-8aca-cd2c92c4754e","tls":false,"tfo":false,"network":"ws","ws-opts":{"path":"/youxuan","headers":{"Host":"tw2.youxuan.wiki"}},"udp":true},
+{"name":"🇨🇳 台湾 3","server":"qrzv.youxuan.wiki","port":2086,"type":"vless","uuid":"206a89e3-e7de-4a36-a452-626838d6c161","tls":false,"tfo":false,"network":"ws","ws-opts":{"path":"/youxuan","headers":{"Host":"tw2.youxuan.wiki"}},"udp":true}]
+operator(pro)
 
 function operator(pro) {
   const Allmap = {};
@@ -291,6 +300,23 @@ function operator(pro) {
   numone && oneP(pro);
   blpx && (pro = fampx(pro));
   key && (pro = pro.filter((e) => !keyb.test(e.name)));
+  const uniqueNodes = [];
+  const seen = new Set();
+
+  pro.forEach((node) => {
+    const { server, port, type } = node;
+
+    // 创建一个唯一的标识符
+    const identifier = `${server}:${port}:${type}`;
+
+    // 检查是否已见过这个标识符
+    if (!seen.has(identifier)) {
+      seen.add(identifier);
+      uniqueNodes.push(node);
+    }
+  });
+
+  pro = uniqueNodes;
   return pro;
 }
 
