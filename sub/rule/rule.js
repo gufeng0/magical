@@ -272,8 +272,21 @@ function overwriteProxyGroups(params) {
       proxies: allProxies, 
       hidden: true, 
     },
-        
-    ...["Steam", "Telegram", "ChatGPT", "Claude"].map(groupName => ({
+
+    {
+      name: "ChatGPT",
+      type: "select",
+      url: getTestUrlForGroup("ChatGPT"),
+      interval: 300,
+      tolerance: 50,
+      proxies: [
+        ...countryRegions.flatMap(region => [
+          `${region.code} - 自动选择`,
+        ]),
+      ],
+    },
+
+    ...["Steam", "Telegram", "Claude"].map(groupName => ({
       name: groupName,
       type: "url-test",
       url: getTestUrlForGroup(groupName),
