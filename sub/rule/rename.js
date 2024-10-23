@@ -169,6 +169,24 @@ function operator(pro) {
 
   const BLKEYS = BLKEY ? BLKEY.split("+") : "";
 
+  const uniqueNodes = [];
+  const seen = new Set();
+
+  pro.forEach((node) => {
+    const { server, port, type } = node;
+
+    // 创建一个唯一的标识符
+    const identifier = `${server}:${port}:${type}`;
+
+    // 检查是否已见过这个标识符
+    if (!seen.has(identifier)) {
+      seen.add(identifier);
+      uniqueNodes.push(node);
+    }
+  });
+
+  pro = uniqueNodes;
+
   pro.forEach((e) => {
     let bktf = false, ens = e.name
     // 预处理 防止预判或遗漏
@@ -291,23 +309,6 @@ function operator(pro) {
   numone && oneP(pro);
   blpx && (pro = fampx(pro));
   key && (pro = pro.filter((e) => !keyb.test(e.name)));
-  const uniqueNodes = [];
-  const seen = new Set();
-
-  pro.forEach((node) => {
-    const { server, port, type } = node;
-
-    // 创建一个唯一的标识符
-    const identifier = `${server}:${port}:${type}`;
-
-    // 检查是否已见过这个标识符
-    if (!seen.has(identifier)) {
-      seen.add(identifier);
-      uniqueNodes.push(node);
-    }
-  });
-
-  pro = uniqueNodes;
   return pro;
 }
 
