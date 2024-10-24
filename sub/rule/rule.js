@@ -207,14 +207,6 @@ function overwriteProxyGroups(params) {
     }))
     .filter((item) => item.proxies.length > 0);
 
-  const manualProxyGroupsConfig = countryRegions.map(region => ({
-    name: `${region.code} - 手动选择`,
-    type: "select", 
-    proxies: getManualProxiesByRegex(params, region.regex),
-    icon: region.icon, 
-    hidden: false, 
-  })).filter(item => item.proxies.length > 0); 
-
   const groups = [
     {
       name: proxyName, 
@@ -235,7 +227,7 @@ function overwriteProxyGroups(params) {
       name: "自动选择", 
       type: "url-test", 
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/speed.svg",
-      proxies: ["ALL - 自动选择", ...autoProxyGroups.map(group => group.name)],
+      proxies: ["ALL - 自动选择", ...autoProxyGroupRegexs.map(group => group.name)],
       interval: 300,
     },
 
@@ -280,9 +272,7 @@ function overwriteProxyGroups(params) {
       interval: 300,
       tolerance: 50,
       proxies: [
-        ...countryRegions.flatMap(region => [
-          `${region.code} - 自动选择`,
-        ]),
+        ...autoProxyGroupRegexs.map(group => group.name),
       ],
       icon: getIconForGroup("ChatGPT"),
     },
@@ -295,10 +285,7 @@ function overwriteProxyGroups(params) {
       tolerance: 50,
       proxies: [
         proxyName,
-        ...countryRegions.flatMap(region => [
-          `${region.code} - 自动选择`,
-          `${region.code} - 手动选择`,
-        ]),
+        ...autoProxyGroupRegexs.map(group => group.name),
         "其它 - 自动选择",
         "DIRECT",
       ],
@@ -331,8 +318,7 @@ function overwriteProxyGroups(params) {
   });
   
   groups.push(...autoProxyGroups);
-  groups.push(...manualProxyGroupsConfig);
-  params["proxy-groups"] = groups; 
+  params["proxy-groups"] = groups;
 }
 
 function overwriteDns(params) {
