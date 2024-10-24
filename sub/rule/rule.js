@@ -256,9 +256,11 @@ function overwriteProxyGroups(params) {
     {
       name: "自动选择", 
       type: "url-test", 
+      url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/speed.svg",
       proxies: ["ALL - 自动选择", ...autoProxyGroupRegexs.map(group => group.name)],
       interval: 300,
+      tolerance: 50, 
     },
 
     {
