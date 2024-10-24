@@ -8,6 +8,30 @@ function main(params) {
   return params;
 }
 
+const Regions = {
+  HK: {
+    code: "HK",
+    name: "香港"
+  },
+  TW: {
+    code: "TW",
+    name: "台湾"
+  },
+  JP: {
+    code: "JP",
+    name: "日本"
+  },
+  US: {
+    code: "US",
+    name: "美国"
+  },
+  KR: {
+    code: "KR",
+    name: "韩国"
+  }
+};
+
+
 const countryRegions = [
   { code: "HK", name: "香港", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/hk.svg", regex: /(香港|HK|Hong Kong|🇭🇰)/i,flag:"🇭🇰" },
   { code: "TW", name: "台湾", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/tw.svg", regex: /(台湾|TW|Taiwan|🇹🇼)/i ,flag:"🇨🇳"},
@@ -191,9 +215,15 @@ function overwriteProxyGroups(params) {
   const allProxies = params["proxies"].map((e) => e.name);
 
   const autoProxyGroupRegexs = countryRegions.map(region => ({
+    code: region.code,
     name: `${region.flag} ${region.code} - 自动选择`,
     regex: region.regex,
   }));
+
+  const autoProxyGroupMap = autoProxyGroupRegexs.reduce((acc,item) => {
+    acc.set(item.code, item);
+    return acc;
+  }, new Map());
 
   const autoProxyGroups = autoProxyGroupRegexs
     .map((item) => ({
@@ -267,13 +297,11 @@ function overwriteProxyGroups(params) {
 
     {
       name: "ChatGPT",
-      type: "select",
+      type: "url-test",
       url: getTestUrlForGroup("ChatGPT"),
       interval: 300,
       tolerance: 50,
-      proxies: [
-        ...autoProxyGroupRegexs.map(group => group.name),
-      ],
+      proxies: [autoProxyGroupMap.get(Regions.US.code)],
       icon: getIconForGroup("ChatGPT"),
     },
 
