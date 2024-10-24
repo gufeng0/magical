@@ -301,7 +301,7 @@ function overwriteProxyGroups(params) {
       url: getTestUrlForGroup("ChatGPT"),
       interval: 300,
       tolerance: 50,
-      proxies: [autoProxyGroupMap.get(Regions.US.code)],
+      proxies: [autoProxyGroupMap.get(Regions.US.code).name],
       icon: getIconForGroup("ChatGPT"),
     },
 
