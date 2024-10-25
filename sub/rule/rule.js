@@ -233,7 +233,7 @@ function overwriteProxyGroups(params) {
       interval: 300,
       tolerance: 50,
       proxies: getProxiesByRegex(params, item.regex),
-      hidden: true,
+      hidden: false,
     }))
     .filter((item) => item.proxies.length > 0);
 
