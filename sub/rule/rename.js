@@ -51,7 +51,7 @@ const nx = inArg.nx || false,
   numone = inArg.one || false,
   debug = inArg.debug || false,
   clear = inArg.clear || false,
-  addflag = inArg.flag || false,
+  addflag = inArg.flag ?? true,
   nm = inArg.nm || false;
 
 const FGF = inArg.fgf == undefined ? " " : decodeURI(inArg.fgf),
@@ -309,6 +309,7 @@ function operator(pro) {
   numone && oneP(pro);
   blpx && (pro = fampx(pro));
   key && (pro = pro.filter((e) => !keyb.test(e.name)));
+  pro = filterCommonRegions(pro)
   return pro;
 }
 
@@ -320,3 +321,10 @@ function jxh(e) { const n = e.reduce((e, n) => { const t = e.find((e) => e.name 
 function oneP(e) { const t = e.reduce((e, t) => { const n = t.name.replace(/[^A-Za-z0-9\u00C0-\u017F\u4E00-\u9FFF]+\d+$/, ""); if (!e[n]) { e[n] = []; } e[n].push(t); return e; }, {}); for (const e in t) { if (t[e].length === 1 && t[e][0].name.endsWith("01")) {/* const n = t[e][0]; n.name = e;*/ t[e][0].name= t[e][0].name.replace(/[^.]01/, "") } } return e; }
 // prettier-ignore
 function fampx(pro) { const wis = []; const wnout = []; for (const proxy of pro) { const fan = specialRegex.some((regex) => regex.test(proxy.name)); if (fan) { wis.push(proxy); } else { wnout.push(proxy); } } const sps = wis.map((proxy) => specialRegex.findIndex((regex) => regex.test(proxy.name)) ); wis.sort( (a, b) => sps[wis.indexOf(a)] - sps[wis.indexOf(b)] || a.name.localeCompare(b.name) ); wnout.sort((a, b) => pro.indexOf(a) - pro.indexOf(b)); return wnout.concat(wis);}
+
+function filterCommonRegions(nodes) {
+    // 定义常用地区的正则表达式
+    const regionRegex = /🇭🇰|香港|🇯🇵|日本|🇺🇸|美国|🇨🇳|台湾|🇰🇷|韩国/;
+    
+    return nodes.filter(node => regionRegex.test(node.name));
+}
