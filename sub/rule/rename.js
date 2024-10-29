@@ -324,7 +324,7 @@ function fampx(pro) { const wis = []; const wnout = []; for (const proxy of pro)
 
 function filterCommonRegions(nodes) {
     // 定义常用地区的正则表达式
-    const regionRegex = /🇭🇰|香港|🇯🇵|日本|🇺🇸|美国|🇨🇳|台湾|🇰🇷|韩国/;
+    const regionRegex = /🇭🇰|香港|🇯🇵|日本|🇺🇸|美国|🇰🇷|韩国/;
     
     return nodes.filter(node => regionRegex.test(node.name));
 }
