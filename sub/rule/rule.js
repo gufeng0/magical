@@ -294,7 +294,7 @@ function overwriteProxyGroups(params) {
       interval: 300, 
       tolerance: 50, 
       proxies: allProxies, 
-      hidden: true, 
+      hidden: false, 
     },
 
     {
