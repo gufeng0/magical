@@ -169,23 +169,7 @@ function operator(pro) {
 
   const BLKEYS = BLKEY ? BLKEY.split("+") : "";
 
-  const uniqueNodes = [];
-  const seen = new Set();
-
-  pro.forEach((node) => {
-    const { server, port, type } = node;
-
-    // 创建一个唯一的标识符
-    const identifier = `${server}:${port}:${type}`;
-
-    // 检查是否已见过这个标识符
-    if (!seen.has(identifier)) {
-      seen.add(identifier);
-      uniqueNodes.push(node);
-    }
-  });
-
-  pro = uniqueNodes;
+  pro = deduplicateProxies(pro);
 
   pro.forEach((e) => {
     let bktf = false, ens = e.name
@@ -327,4 +311,22 @@ function filterCommonRegions(nodes) {
     const regionRegex = /🇭🇰|香港|🇯🇵|日本|🇺🇸|美国|🇰🇷|韩国/;
     
     return nodes.filter(node => regionRegex.test(node.name));
+}
+
+function deduplicateProxies(proxiesList) {
+    const uniqueProxies = [];
+    const seen = new Set();
+
+    for (const proxy of proxiesList) {
+        const key = proxy.password
+            ? `${proxy.server}:${proxy.port}:${proxy.type}:${proxy.password}`
+            : `${proxy.server}:${proxy.port}:${proxy.type}`;
+
+        if (!seen.has(key)) {
+            seen.add(key);
+            uniqueProxies.push(proxy);
+        }
+    }
+
+    return uniqueProxies;
 }
