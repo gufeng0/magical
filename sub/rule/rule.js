@@ -11,33 +11,56 @@ function main(params) {
 const Regions = {
   HK: {
     code: "HK",
-    name: "香港"
+    name: "香港",
   },
   TW: {
     code: "TW",
-    name: "台湾"
+    name: "台湾",
   },
   JP: {
     code: "JP",
-    name: "日本"
+    name: "日本",
   },
   US: {
     code: "US",
-    name: "美国"
+    name: "美国",
   },
   KR: {
     code: "KR",
-    name: "韩国"
-  }
+    name: "韩国",
+  },
 };
 
-
 const countryRegions = [
-  { code: "HK", name: "香港", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/hk.svg", regex: /(香港|HK|Hong Kong|🇭🇰)/i,flag:"🇭🇰" },
+  {
+    code: "HK",
+    name: "香港",
+    icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/hk.svg",
+    regex: /(香港|HK|Hong Kong|🇭🇰)/i,
+    flag: "🇭🇰",
+  },
   // { code: "TW", name: "台湾", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/tw.svg", regex: /(台湾|TW|Taiwan|🇹🇼)/i ,flag:"🇨🇳"},
-  { code: "JP", name: "日本", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/jp.svg", regex: /(日本|JP|Japan|🇯🇵)/i ,flag: "🇯🇵"},
-  { code: "US", name: "美国", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/us.svg", regex: /(美国|US|USA|United States|America|🇺🇸)/i,flag: "🇺🇸" },
-  { code: "KR", name: "韩国", icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/kr.svg", regex: /(韩国|KR|Korea|South Korea|🇰🇷)/i,flag: "🇰🇷" },
+  {
+    code: "JP",
+    name: "日本",
+    icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/jp.svg",
+    regex: /(日本|JP|Japan|🇯🇵)/i,
+    flag: "🇯🇵",
+  },
+  {
+    code: "US",
+    name: "美国",
+    icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/us.svg",
+    regex: /(美国|US|USA|United States|America|🇺🇸)/i,
+    flag: "🇺🇸",
+  },
+  {
+    code: "KR",
+    name: "韩国",
+    icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/flags/kr.svg",
+    regex: /(韩国|KR|Korea|South Korea|🇰🇷)/i,
+    flag: "🇰🇷",
+  },
 ];
 
 function getTestUrlForGroup(groupName) {
@@ -50,6 +73,8 @@ function getTestUrlForGroup(groupName) {
       return "https://chat.openai.com/";
     case "Claude":
       return "https://claude.ai/";
+    case "YouTube":
+      return "https://youtube.com/";
     default:
       return "http://www.gstatic.com/generate_204";
   }
@@ -65,6 +90,8 @@ function getIconForGroup(groupName) {
       return "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/chatgpt.svg";
     case "Claude":
       return "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/claude.svg";
+    case "YouTube":
+      return "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/youtube.svg";
     case "漏网之鱼":
       return "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/fish.svg";
     case "广告拦截":
@@ -85,6 +112,7 @@ function overwriteRules(params) {
     "RULE-SET,applications,DIRECT",
     "RULE-SET,openai,ChatGPT",
     "RULE-SET,claude,Claude",
+    "RULE-SET,youtube,YouTube",
     "RULE-SET,telegramcidr,Telegram,no-resolve",
     "RULE-SET,apple," + proxyName,
     "RULE-SET,icloud," + proxyName,
@@ -142,6 +170,12 @@ function overwriteRules(params) {
       behavior: "classical",
       url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Claude/Claude.yaml",
       path: "./ruleset/custom/Claude.yaml",
+    },
+    youtube: {
+      type: "http",
+      behavior: "classical",
+      url: "https://cdn.jsdelivr.net/gh/snapei/clash-pro-rules@release/youtube.txt",
+      path: "./ruleset/custom/youtube.yaml",
     },
     telegramcidr: {
       type: "http",
@@ -206,7 +240,7 @@ function overwriteRules(params) {
       interval: 86400,
     },
   };
-  
+
   params["rule-providers"] = ruleProviders;
   params["rules"] = rules;
 }
@@ -214,13 +248,13 @@ function overwriteRules(params) {
 function overwriteProxyGroups(params) {
   const allProxies = params["proxies"].map((e) => e.name);
 
-  const autoProxyGroupRegexs = countryRegions.map(region => ({
+  const autoProxyGroupRegexs = countryRegions.map((region) => ({
     code: region.code,
     name: `${region.flag} ${region.code} - 自动选择`,
     regex: region.regex,
   }));
 
-  const autoProxyGroupMap = autoProxyGroupRegexs.reduce((acc,item) => {
+  const autoProxyGroupMap = autoProxyGroupRegexs.reduce((acc, item) => {
     acc.set(item.code, item);
     return acc;
   }, new Map());
@@ -239,62 +273,71 @@ function overwriteProxyGroups(params) {
 
   const groups = [
     {
-      name: proxyName, 
+      name: proxyName,
       type: "select",
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/adjust.svg",
-      proxies: ["自动选择", "手动选择", "负载均衡 (散列)", "负载均衡 (轮询)", "DIRECT"],
-    },
-    
-    {
-      name: "手动选择", 
-      type: "select", 
-      icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/link.svg",
-      proxies: allProxies, 
+      proxies: [
+        "自动选择",
+        "手动选择",
+        "负载均衡 (散列)",
+        "负载均衡 (轮询)",
+        "DIRECT",
+      ],
     },
 
     {
-      name: "自动选择", 
-      type: "url-test", 
+      name: "手动选择",
+      type: "select",
+      icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/link.svg",
+      proxies: allProxies,
+    },
+
+    {
+      name: "自动选择",
+      type: "url-test",
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/speed.svg",
-      proxies: ["ALL - 自动选择", ...autoProxyGroupRegexs.map(group => group.name)],
+      proxies: [
+        "ALL - 自动选择",
+        ...autoProxyGroupRegexs.map((group) => group.name),
+      ],
       interval: 300,
-      tolerance: 50, 
+      tolerance: 50,
     },
 
     {
-      name: "负载均衡 (散列)", 
-      type: "load-balance", 
+      name: "负载均衡 (散列)",
+      type: "load-balance",
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/balance.svg",
-      interval: 300, 
-      "max-failed-times": 3, 
-      strategy: "consistent-hashing", 
-      lazy: true, 
-      proxies: allProxies, 
+      interval: 300,
+      "max-failed-times": 3,
+      strategy: "consistent-hashing",
+      lazy: true,
+      proxies: allProxies,
     },
 
     {
-      name: "负载均衡 (轮询)", 
-      type: "load-balance", 
+      name: "负载均衡 (轮询)",
+      type: "load-balance",
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/merry_go.svg",
-      interval: 300, 
-      "max-failed-times": 3, 
-      strategy: "round-robin", 
-      lazy: true, 
-      proxies: allProxies, 
+      interval: 300,
+      "max-failed-times": 3,
+      strategy: "round-robin",
+      lazy: true,
+      proxies: allProxies,
     },
 
     {
-      name: "ALL - 自动选择", 
-      type: "url-test", 
+      name: "ALL - 自动选择",
+      type: "url-test",
       url: "http://www.gstatic.com/generate_204",
-      interval: 300, 
-      tolerance: 50, 
-      proxies: allProxies, 
-      hidden: false, 
+      interval: 300,
+      tolerance: 50,
+      proxies: allProxies,
+      hidden: false,
     },
 
     {
@@ -307,29 +350,27 @@ function overwriteProxyGroups(params) {
       icon: getIconForGroup("ChatGPT"),
     },
 
-    ...["Steam", "Telegram", "Claude"].map(groupName => ({
+    ...["Steam", "Telegram", "Claude", "YouTube"].map((groupName) => ({
       name: groupName,
       type: "url-test",
       url: getTestUrlForGroup(groupName),
       interval: 300,
       tolerance: 50,
-      proxies: [
-        ...autoProxyGroupRegexs.map(group => group.name)
-      ],
+      proxies: [...autoProxyGroupRegexs.map((group) => group.name)],
       icon: getIconForGroup(groupName),
     })),
-    
+
     {
-      name: "漏网之鱼", 
-      type: "select", 
-      proxies: ["DIRECT", proxyName], 
+      name: "漏网之鱼",
+      type: "select",
+      proxies: ["DIRECT", proxyName],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/fish.svg",
     },
 
     {
-      name: "广告拦截", 
-      type: "select", 
-      proxies: ["REJECT"], 
+      name: "广告拦截",
+      type: "select",
+      proxies: ["REJECT"],
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/block.svg",
     },
   ];
@@ -340,17 +381,27 @@ function overwriteProxyGroups(params) {
     url: "http://www.gstatic.com/generate_204",
     interval: 300,
     tolerance: 50,
-    proxies: getProxiesByRegex(params, /(?!.*(?: 剩余 | 到期 | 主页 | 官网 | 游戏 | 关注))(.*)/),
+    proxies: getProxiesByRegex(
+      params,
+      /(?!.*(?: 剩余 | 到期 | 主页 | 官网 | 游戏 | 关注))(.*)/,
+    ),
     hidden: true,
   });
-  
+
   groups.push(...autoProxyGroups);
   params["proxy-groups"] = groups;
 }
 
 function overwriteDns(params) {
-  const cnDnsList = ["https://223.5.5.5/dns-query", "https://1.12.12.12/dns-query"];
-  const trustDnsList = ["quic://dns.cooluc.com", "https://1.0.0.1/dns-query", "https://1.1.1.1/dns-query"];
+  const cnDnsList = [
+    "https://223.5.5.5/dns-query",
+    "https://1.12.12.12/dns-query",
+  ];
+  const trustDnsList = [
+    "quic://dns.cooluc.com",
+    "https://1.0.0.1/dns-query",
+    "https://1.1.1.1/dns-query",
+  ];
   const dnsOptions = {
     enable: true,
     "prefer-h3": true,
@@ -359,23 +410,41 @@ function overwriteDns(params) {
     "nameserver-policy": {
       "geosite:cn": cnDnsList,
       "geosite:geolocation-!cn": trustDnsList,
-      "domain:google.com,facebook.com,youtube.com,twitter.com,github.com,cloudflare.com,jsdelivr.net,hf.space": trustDnsList,
+      "domain:google.com,facebook.com,youtube.com,twitter.com,github.com,cloudflare.com,jsdelivr.net,hf.space":
+        trustDnsList,
     },
     fallback: trustDnsList,
-    "fallback-filter": { geoip: true, "geoip-code": "CN", ipcidr: ["240.0.0.0/4"] },
+    "fallback-filter": {
+      geoip: true,
+      "geoip-code": "CN",
+      ipcidr: ["240.0.0.0/4"],
+    },
   };
   const githubPrefix = "https://fastgh.lainbo.com/";
   const rawGeoxURLs = {
-    geoip: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat",
-    geosite: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
+    geoip:
+      "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat",
+    geosite:
+      "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
     mmdb: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb",
   };
-  const accelURLs = Object.fromEntries(Object.entries(rawGeoxURLs).map(([key, githubUrl]) => [key, `${githubPrefix}${githubUrl}`]));
+  const accelURLs = Object.fromEntries(
+    Object.entries(rawGeoxURLs).map(([key, githubUrl]) => [
+      key,
+      `${githubPrefix}${githubUrl}`,
+    ]),
+  );
   const otherOptions = {
     "unified-delay": false,
     "tcp-concurrent": true,
     profile: { "store-selected": true, "store-fake-ip": true },
-    sniffer: { enable: true, sniff: { TLS: { ports: [443, 8443] }, HTTP: { ports: [80, "8080-8880"], "override-destination": true } } },
+    sniffer: {
+      enable: true,
+      sniff: {
+        TLS: { ports: [443, 8443] },
+        HTTP: { ports: [80, "8080-8880"], "override-destination": true },
+      },
+    },
     "geodata-mode": true,
     "geox-url": accelURLs,
   };
@@ -386,11 +455,19 @@ function overwriteDns(params) {
 }
 
 function getProxiesByRegex(params, regex) {
-  const matchedProxies = params.proxies.filter((e) => regex.test(e.name)).map((e) => e.name);
+  const matchedProxies = params.proxies
+    .filter((e) => regex.test(e.name))
+    .map((e) => e.name);
   return matchedProxies.length > 0 ? matchedProxies : ["手动选择"];
 }
 
 function getManualProxiesByRegex(params, regex) {
-  const matchedProxies = params.proxies.filter((e) => regex.test(e.name)).map((e) => e.name);
-  return regex.test("CN") ? ["DIRECT", ...matchedProxies, "手动选择", proxyName] : matchedProxies.length > 0 ? matchedProxies : ["DIRECT", "手动选择", proxyName];
+  const matchedProxies = params.proxies
+    .filter((e) => regex.test(e.name))
+    .map((e) => e.name);
+  return regex.test("CN")
+    ? ["DIRECT", ...matchedProxies, "手动选择", proxyName]
+    : matchedProxies.length > 0
+      ? matchedProxies
+      : ["DIRECT", "手动选择", proxyName];
 }
