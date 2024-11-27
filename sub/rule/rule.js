@@ -173,7 +173,7 @@ function overwriteRules(params) {
     },
     youtube: {
       type: "http",
-      behavior: "classical",
+      behavior: "domain",
       url: "https://cdn.jsdelivr.net/gh/snapei/clash-pro-rules@release/youtube.txt",
       path: "./ruleset/custom/youtube.yaml",
     },
