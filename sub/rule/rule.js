@@ -350,7 +350,21 @@ function overwriteProxyGroups(params) {
       icon: getIconForGroup("ChatGPT"),
     },
 
-    ...["Steam", "Telegram", "Claude", "YouTube"].map((groupName) => ({
+    {
+      name: "Claude",
+      type: "url-test",
+      url: getTestUrlForGroup("Claude"),
+      interval: 300,
+      tolerance: 50,
+      proxies: [
+        ...autoProxyGroupRegexs
+          .filter((group) => group.code !== Regions.HK.code) // 过滤掉香港节点
+          .map((group) => group.name),
+      ],
+      icon: getIconForGroup("Claude"),
+    },
+
+    ...["Steam", "Telegram", "YouTube"].map((groupName) => ({
       name: groupName,
       type: "url-test",
       url: getTestUrlForGroup(groupName),
