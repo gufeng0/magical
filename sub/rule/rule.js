@@ -278,11 +278,13 @@ function overwriteProxyGroups(params) {
       url: "http://www.gstatic.com/generate_204",
       icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/adjust.svg",
       proxies: [
-        "自动选择",
+        // "自动选择",
         "手动选择",
         "负载均衡 (散列)",
         "负载均衡 (轮询)",
-        "DIRECT",
+        "ALL - 自动选择",
+        ...autoProxyGroupRegexs.map((group) => group.name),
+        // "DIRECT",
       ],
     },
 
@@ -293,18 +295,18 @@ function overwriteProxyGroups(params) {
       proxies: allProxies,
     },
 
-    {
-      name: "自动选择",
-      type: "url-test",
-      url: "http://www.gstatic.com/generate_204",
-      icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/speed.svg",
-      proxies: [
-        "ALL - 自动选择",
-        ...autoProxyGroupRegexs.map((group) => group.name),
-      ],
-      interval: 300,
-      tolerance: 50,
-    },
+    // {
+    //   name: "自动选择",
+    //   type: "url-test",
+    //   url: "http://www.gstatic.com/generate_204",
+    //   icon: "https://fastly.jsdelivr.net/gh/clash-verge-rev/clash-verge-rev.github.io@main/docs/assets/icons/speed.svg",
+    //   proxies: [
+    //     "ALL - 自动选择",
+    //     ...autoProxyGroupRegexs.map((group) => group.name),
+    //   ],
+    //   interval: 300,
+    //   tolerance: 50,
+    // },
 
     {
       name: "负载均衡 (散列)",
