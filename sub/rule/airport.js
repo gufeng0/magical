@@ -17,7 +17,6 @@ function overwriteRules(params) {
         "RULE-SET,cncidr,DIRECT",
         "RULE-SET,private,DIRECT",
         "RULE-SET,lancidr,DIRECT",
-        "DOMAIN-SUFFIX,linux.do,DIRECT",
         "GEOIP,LAN,DIRECT,no-resolve",
         "GEOIP,CN,DIRECT,no-resolve",
         "RULE-SET,applications,DIRECT",
@@ -236,9 +235,6 @@ function overwriteDns(params) {
         "https://1.0.0.1/dns-query",
         "https://1.1.1.1/dns-query",
     ];
-    const linuxdoDnsList = [
-        'https://aaa.ddd.oaifree.com/query-dns',
-    ];
     // const notionDns = 'tls://dns.jerryw.cn'
     // const notionUrls = [
     //     'http-inputs-notion.splunkcloud.com',
@@ -262,7 +258,6 @@ function overwriteDns(params) {
             "geosite:geolocation-!cn": trustDnsList,
             // 如果你有一些内网使用的DNS，应该定义在这里，多个域名用英文逗号分割
             // '+.公司域名.com, www.4399.com, +.baidu.com': '10.0.0.1'
-            "+.linux.do": linuxdoDnsList,
         },
         fallback: trustDnsList,
         "fallback-filter": {
