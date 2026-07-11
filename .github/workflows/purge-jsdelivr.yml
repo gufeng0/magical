@@ -1,0 +1,52 @@
+name: Purge jsDelivr Cache
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Purge changed files
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: master
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            mapfile -d '' files < <(git ls-files -z)
+          elif git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            mapfile -d '' files < <(git diff --name-only -z "$BEFORE_SHA" "$CURRENT_SHA")
+          else
+            echo "Previous commit is unavailable; purging all tracked files."
+            mapfile -d '' files < <(git ls-files -z)
+          fi
+
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No files need to be purged."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            encoded_file=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$file")
+            purge_url="https://purge.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded_file}"
+            echo "Purging ${file}"
+            curl --fail --silent --show-error --retry 3 "$purge_url"
+            echo
+          done
