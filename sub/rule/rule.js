@@ -11,6 +11,17 @@ const GROUP_NAMES = {
   reject: "🛑 全球拦截",
   final: "🐟 漏网之鱼",
 };
+// 自定义规则优先级最高，分组支持 proxy、direct、reject 等简写。
+const CUSTOM_RULES = [
+  "DOMAIN-SUFFIX,linux.do,proxy",
+  "DOMAIN-SUFFIX,anyrouter.top,proxy",
+  "DOMAIN-SUFFIX,brew.sh,proxy",
+  "DOMAIN-SUFFIX,netbird.io,proxy",
+  "DOMAIN-SUFFIX,figma.com,proxy",
+  "DOMAIN-SUFFIX,cc.cd,proxy",
+  "DOMAIN-SUFFIX,mangabz.com,proxy",
+  "DOMAIN-SUFFIX,greasyfork.org,proxy",
+];
 
 function main(params) {
   const hasValidProxy =
@@ -30,6 +41,7 @@ function main(params) {
 
 function overwriteRules(params) {
   const rules = [
+    ...createCustomRules(),
     `RULE-SET,reject,${GROUP_NAMES.reject}`,
     `RULE-SET,private,${GROUP_NAMES.direct}`,
     `RULE-SET,lancidr,${GROUP_NAMES.direct}`,
@@ -135,6 +147,15 @@ function overwriteRules(params) {
 
   params["rule-providers"] = ruleProviders;
   params.rules = rules;
+}
+
+function createCustomRules() {
+  return CUSTOM_RULES.map((rule) =>
+    rule
+      .split(",")
+      .map((part) => GROUP_NAMES[part.trim()] || part)
+      .join(","),
+  );
 }
 
 function createRuleProvider(behavior, url, path) {
