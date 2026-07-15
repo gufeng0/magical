@@ -22,6 +22,7 @@ const CUSTOM_RULES = [
   "DOMAIN-SUFFIX,cc.cd,proxy",
   "DOMAIN-SUFFIX,mangabz.com,proxy",
   "DOMAIN-SUFFIX,greasyfork.org,proxy",
+  "DOMAIN-SUFFIX,live.com,proxy",
 ];
 
 const SUBSCRIPTION_RULES = [
