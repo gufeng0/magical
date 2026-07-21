@@ -25,6 +25,9 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: master
+          INITIAL_DELAY_SECONDS: 45
+          VERIFY_DELAY_SECONDS: 15
+          MAX_ATTEMPTS: 5
         shell: bash
         run: |
           set -euo pipefail
@@ -43,10 +46,44 @@ jobs:
             exit 0
           fi
 
+          echo "Waiting ${INITIAL_DELAY_SECONDS}s for GitHub branch content to settle."
+          sleep "$INITIAL_DELAY_SECONDS"
+
           for file in "${files[@]}"; do
             encoded_file=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$file")
             purge_url="https://purge.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded_file}"
+            cdn_url="https://cdn.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded_file}"
+
+            if [[ ! -f "$file" ]]; then
+              echo "Purging deleted file ${file}"
+              curl --fail --silent --show-error --retry 3 "$purge_url"
+              echo
+              continue
+            fi
+
+            local_hash=$(sha256sum "$file" | awk '{print $1}')
             echo "Purging ${file}"
-            curl --fail --silent --show-error --retry 3 "$purge_url"
-            echo
+            echo "Expected sha256: ${local_hash}"
+
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+              echo "Attempt ${attempt}/${MAX_ATTEMPTS}: ${purge_url}"
+              curl --fail --silent --show-error --retry 3 "$purge_url"
+              echo
+
+              sleep "$VERIFY_DELAY_SECONDS"
+
+              remote_hash=$(curl --fail --silent --show-error --location "$cdn_url" | sha256sum | awk '{print $1}')
+              echo "CDN sha256: ${remote_hash}"
+
+              if [[ "$remote_hash" == "$local_hash" ]]; then
+                echo "Verified ${file}"
+                break
+              fi
+
+              if [[ "$attempt" == "$MAX_ATTEMPTS" ]]; then
+                echo "jsDelivr cache still stale for ${file}" >&2
+                echo "URL: ${cdn_url}" >&2
+                exit 1
+              fi
+            done
           done
