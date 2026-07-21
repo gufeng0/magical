@@ -40,25 +40,10 @@ function main(params) {
   if (!hasValidProxy) {
     return params;
   }
-  overwriteBaseConfig(params);
   overwriteRules(params);
   overwriteProxyGroups(params);
+  overwriteDns(params);
   return params;
-}
-
-function overwriteBaseConfig(params) {
-  const proxies = params.proxies;
-  Object.keys(params).forEach((key) => delete params[key]);
-  Object.assign(params, {
-    dns: createDnsOptions(),
-    port: 7890,
-    "socks-port": 7891,
-    "allow-lan": true,
-    mode: "rule",
-    "log-level": "info",
-    "external-controller": "127.0.0.1:9090",
-    proxies,
-  });
 }
 
 function overwriteRules(params) {
@@ -222,25 +207,62 @@ function createHealthCheckGroup(name, type, proxies, options = {}) {
   };
 }
 
-function createDnsOptions() {
-  return {
+function overwriteDns(params) {
+  const cnDnsList = [
+    "https://223.5.5.5/dns-query",
+    "https://1.12.12.12/dns-query",
+  ];
+  const trustDnsList = [
+    "quic://dns.cooluc.com",
+    "https://1.0.0.1/dns-query",
+    "https://1.1.1.1/dns-query",
+  ];
+  const dnsOptions = {
     enable: true,
-    "default-nameserver": ["223.5.5.5", "119.29.29.29", "114.114.114.114"],
-    "use-hosts": true,
-    nameserver: [
-      "https://sm2.doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query",
-    ],
-    fallback: ["8.8.4.4", "208.67.220.220"],
+    "prefer-h3": true,
+    "default-nameserver": cnDnsList,
+    nameserver: trustDnsList,
+    "nameserver-policy": {
+      "geosite:cn": cnDnsList,
+      "geosite:geolocation-!cn": trustDnsList,
+      "domain:google.com,facebook.com,youtube.com,twitter.com,github.com,cloudflare.com,jsdelivr.net,hf.space":
+        trustDnsList,
+    },
+    fallback: trustDnsList,
     "fallback-filter": {
       geoip: true,
       "geoip-code": "CN",
-      ipcidr: ["240.0.0.0/4", "127.0.0.1/32", "0.0.0.0/32"],
-      domain: ["+.google.com", "+.facebook.com", "+.youtube.com"],
-    },
-    "nameserver-policy": {
-      "edt.hersmile.cc.cd": "https://dns.alidns.com/dns-query",
-      "cloudflare-ech.com": "https://dns.alidns.com/dns-query",
+      ipcidr: ["240.0.0.0/4"],
     },
   };
+  const githubPrefix = "https://fastgh.lainbo.com/";
+  const rawGeoxURLs = {
+    geoip:
+      "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat",
+    geosite:
+      "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat",
+    mmdb: "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb",
+  };
+  const accelURLs = Object.fromEntries(
+    Object.entries(rawGeoxURLs).map(([key, githubUrl]) => [
+      key,
+      `${githubPrefix}${githubUrl}`,
+    ]),
+  );
+  const otherOptions = {
+    "unified-delay": false,
+    "tcp-concurrent": true,
+    profile: { "store-selected": true, "store-fake-ip": true },
+    sniffer: {
+      enable: true,
+      sniff: {
+        TLS: { ports: [443, 8443] },
+        HTTP: { ports: [80, "8080-8880"], "override-destination": true },
+      },
+    },
+    "geodata-mode": true,
+    "geox-url": accelURLs,
+  };
+  params.dns = { ...(params.dns || {}), ...dnsOptions };
+  Object.assign(params, otherOptions);
 }
