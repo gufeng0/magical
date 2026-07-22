@@ -312,6 +312,10 @@ function createDnsOptions() {
       ],
     },
     "nameserver-policy": {
+      // linux.do 国内 UDP/公共 DNS 易污染，仅该域名走指定 DoH
+      "+.linux.do": [
+        "https://i4cm5lqxfu.cloudflare-gateway.com/dns-query",
+      ],
       "cloudflare-ech.com": CN_DNS,
       // 内网与系统解析
       "+.lan": "system",
