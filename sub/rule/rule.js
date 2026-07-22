@@ -312,10 +312,6 @@ function createDnsOptions() {
       ],
     },
     "nameserver-policy": {
-      // cc.cd 走海外 DoH：国内解析会被运营商阻断/污染
-      "edt.hersmile.cc.cd": TRUST_DNS,
-      "+.cc.cd": TRUST_DNS,
-      // 其它节点辅助域名仍用国内 DoH
       "cloudflare-ech.com": CN_DNS,
       // 内网与系统解析
       "+.lan": "system",
