@@ -15,7 +15,6 @@ const GROUP_NAMES = {
 
 // 自定义规则优先级最高，分组支持 proxy、direct、reject 等简写。
 const CUSTOM_RULES = [
-  "DOMAIN-SUFFIX,linux.do,proxy",
   "DOMAIN-SUFFIX,anyrouter.top,proxy",
   "DOMAIN-SUFFIX,brew.sh,proxy",
   "DOMAIN-SUFFIX,netbird.io,proxy",
