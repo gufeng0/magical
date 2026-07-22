@@ -30,6 +30,19 @@ const RULE_PROVIDER_INTERVAL = 86400;
 const RULE_PROVIDER_BASE =
   "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release";
 
+// 国内 DNS：解析节点域名、国内站点
+const CN_DNS = [
+  "https://dns.alidns.com/dns-query",
+  "https://doh.pub/dns-query",
+];
+
+// 可信海外 DNS：仅作 fallback，用加密 DoH，避免裸 UDP 被干扰
+const TRUST_DNS = [
+  "https://1.1.1.1/dns-query",
+  "https://1.0.0.1/dns-query",
+  "https://8.8.8.8/dns-query",
+];
+
 function main(params) {
   const hasValidProxy =
     params &&
@@ -57,6 +70,13 @@ function overwriteBaseConfig(params) {
     mode: "rule",
     "log-level": "info",
     "external-controller": "127.0.0.1:9090",
+    "unified-delay": true,
+    "tcp-concurrent": true,
+    profile: {
+      "store-selected": true,
+      "store-fake-ip": true,
+    },
+    sniffer: createSnifferOptions(),
     proxies,
   });
 }
@@ -225,22 +245,98 @@ function createHealthCheckGroup(name, type, proxies, options = {}) {
 function createDnsOptions() {
   return {
     enable: true,
+    // 关闭 H3 优先，减少 QUIC 抖动导致的偶发 DNS/TLS 失败
+    "prefer-h3": false,
+    ipv6: false,
+    "enhanced-mode": "fake-ip",
+    "fake-ip-range": "198.18.0.1/16",
+    "fake-ip-filter": [
+      "*.lan",
+      "*.local",
+      "*.localhost",
+      "time.*.com",
+      "time.*.gov",
+      "time.*.edu.cn",
+      "time.*.apple.com",
+      "time1.*.com",
+      "time2.*.com",
+      "time3.*.com",
+      "time4.*.com",
+      "time5.*.com",
+      "time6.*.com",
+      "time7.*.com",
+      "ntp.*.com",
+      "ntp1.*.com",
+      "ntp2.*.com",
+      "ntp3.*.com",
+      "ntp4.*.com",
+      "ntp5.*.com",
+      "ntp6.*.com",
+      "ntp7.*.com",
+      "*.ntp.org.cn",
+      "+.pool.ntp.org",
+      "stun.*.*",
+      "stun.*.*.*",
+      "heartbeat.belkin.com",
+      "*.linksys.com",
+      "*.linksyssmartwifi.com",
+      "localhost.ptlogin2.qq.com",
+      "+.market.xiaomi.com",
+      "proxy.golang.org",
+    ],
+    // 仅用 IP，解析节点域名和其他 DNS 域名
     "default-nameserver": ["223.5.5.5", "119.29.29.29", "114.114.114.114"],
     "use-hosts": true,
-    nameserver: [
-      "https://sm2.doh.pub/dns-query",
-      "https://dns.alidns.com/dns-query",
-    ],
-    fallback: ["8.8.4.4", "208.67.220.220"],
+    "use-system-hosts": true,
+    nameserver: CN_DNS,
+    fallback: TRUST_DNS,
     "fallback-filter": {
       geoip: true,
       "geoip-code": "CN",
-      ipcidr: ["240.0.0.0/4", "127.0.0.1/32", "0.0.0.0/32"],
-      domain: ["+.google.com", "+.facebook.com", "+.youtube.com"],
+      ipcidr: ["240.0.0.0/4", "0.0.0.0/32", "127.0.0.1/32"],
+      domain: [
+        "+.google.com",
+        "+.googleapis.com",
+        "+.gstatic.com",
+        "+.facebook.com",
+        "+.youtube.com",
+        "+.ytimg.com",
+        "+.github.com",
+        "+.githubusercontent.com",
+        "+.twitter.com",
+        "+.x.com",
+        "+.telegram.org",
+        "+.t.me",
+        "+.cloudflare.com",
+        "+.openai.com",
+      ],
     },
     "nameserver-policy": {
-      "edt.hersmile.cc.cd": "https://dns.alidns.com/dns-query",
-      "cloudflare-ech.com": "https://dns.alidns.com/dns-query",
+      // 机场/节点相关域名强制国内 DoH，降低连节点阶段 TLS 失败
+      "edt.hersmile.cc.cd": CN_DNS,
+      "+.cc.cd": CN_DNS,
+      "cloudflare-ech.com": CN_DNS,
+      // 内网与系统解析
+      "+.lan": "system",
+      "+.local": "system",
+      "localhost": "system",
+    },
+  };
+}
+
+function createSnifferOptions() {
+  return {
+    enable: true,
+    "force-dns-mapping": true,
+    "parse-pure-ip": true,
+    sniff: {
+      TLS: {
+        ports: [443, 8443],
+      },
+      HTTP: {
+        ports: [80, "8080-8880"],
+        "override-destination": true,
+      },
     },
   };
 }
