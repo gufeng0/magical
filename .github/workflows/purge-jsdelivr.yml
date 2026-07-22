@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -25,9 +25,10 @@ jobs:
           CURRENT_SHA: ${{ github.sha }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: master
-          INITIAL_DELAY_SECONDS: 20
-          VERIFY_DELAY_SECONDS: 8
-          MAX_ATTEMPTS: 5
+          # GitHub -> jsDelivr 回源需要时间；过短会导致校验失败、缓存一直旧
+          INITIAL_DELAY_SECONDS: 40
+          VERIFY_DELAY_SECONDS: 15
+          MAX_ATTEMPTS: 8
         shell: bash
         run: |
           set -euo pipefail
@@ -46,18 +47,61 @@ jobs:
             exit 0
           fi
 
+          echo "Files to purge (${#files[@]}):"
+          printf ' - %s\n' "${files[@]}"
+
           echo "Waiting ${INITIAL_DELAY_SECONDS}s for GitHub branch content to settle."
           sleep "$INITIAL_DELAY_SECONDS"
 
+          # 确认 GitHub raw 已是当前提交内容，避免 CDN 回源到旧版本
+          wait_github_raw() {
+            local file="$1"
+            local expected="$2"
+            local encoded
+            encoded=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$file")
+            local raw_url="https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}/${encoded}"
+            local attempt raw_hash
+            for attempt in $(seq 1 10); do
+              raw_hash=$(curl --fail --silent --show-error --location --retry 3 "$raw_url" | sha256sum | awk '{print $1}') || raw_hash=""
+              echo "GitHub raw attempt ${attempt}: ${raw_hash:-<empty>}"
+              if [[ "$raw_hash" == "$expected" ]]; then
+                return 0
+              fi
+              sleep 3
+            done
+            echo "GitHub raw still not updated for ${file}" >&2
+            echo "URL: ${raw_url}" >&2
+            return 1
+          }
+
+          purge_variants() {
+            local encoded="$1"
+            local short_sha="${CURRENT_SHA:0:7}"
+            local urls=(
+              "https://purge.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded}"
+              "https://purge.jsdelivr.net/gh/${REPOSITORY}@${CURRENT_SHA}/${encoded}"
+              "https://purge.jsdelivr.net/gh/${REPOSITORY}@${short_sha}/${encoded}"
+              "https://purge.jsdelivr.net/gh/${REPOSITORY}/${encoded}"
+            )
+            local url
+            for url in "${urls[@]}"; do
+              echo "Purge: ${url}"
+              curl --fail --silent --show-error --retry 3 "$url" || true
+              echo
+            done
+          }
+
+          failed=0
+
           for file in "${files[@]}"; do
             encoded_file=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$file")
-            purge_url="https://purge.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded_file}"
             cdn_url="https://cdn.jsdelivr.net/gh/${REPOSITORY}@${BRANCH}/${encoded_file}"
+            # 带 commit 的 URL 一般回源更快，用于辅助校验
+            cdn_sha_url="https://cdn.jsdelivr.net/gh/${REPOSITORY}@${CURRENT_SHA}/${encoded_file}"
 
             if [[ ! -f "$file" ]]; then
               echo "Purging deleted file ${file}"
-              curl --fail --silent --show-error --retry 3 "$purge_url"
-              echo
+              purge_variants "$encoded_file"
               continue
             fi
 
@@ -65,25 +109,44 @@ jobs:
             echo "Purging ${file}"
             echo "Expected sha256: ${local_hash}"
 
-            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
-              echo "Attempt ${attempt}/${MAX_ATTEMPTS}: ${purge_url}"
-              curl --fail --silent --show-error --retry 3 "$purge_url"
-              echo
+            if ! wait_github_raw "$file" "$local_hash"; then
+              echo "Skip CDN verify for ${file} because GitHub raw is not ready." >&2
+              failed=1
+              continue
+            fi
 
+            verified=0
+            for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+              echo "Attempt ${attempt}/${MAX_ATTEMPTS}"
+              purge_variants "$encoded_file"
               sleep "$VERIFY_DELAY_SECONDS"
 
-              remote_hash=$(curl --fail --silent --show-error --location "$cdn_url" | sha256sum | awk '{print $1}')
-              echo "CDN sha256: ${remote_hash}"
+              remote_hash=$(curl --fail --silent --show-error --location --retry 3 "$cdn_url" | sha256sum | awk '{print $1}') || remote_hash=""
+              remote_sha_hash=$(curl --fail --silent --show-error --location --retry 3 "$cdn_sha_url" | sha256sum | awk '{print $1}') || remote_sha_hash=""
+              echo "CDN @${BRANCH} sha256: ${remote_hash:-<empty>}"
+              echo "CDN @${CURRENT_SHA} sha256: ${remote_sha_hash:-<empty>}"
 
               if [[ "$remote_hash" == "$local_hash" ]]; then
-                echo "Verified ${file}"
+                echo "Verified ${file} on @${BRANCH}"
+                verified=1
                 break
               fi
 
-              if [[ "$attempt" == "$MAX_ATTEMPTS" ]]; then
-                echo "jsDelivr cache still stale for ${file}" >&2
-                echo "URL: ${cdn_url}" >&2
-                exit 1
+              # branch 标签偶发滞后时，至少确认 commit 固定链接已更新
+              if [[ "$remote_sha_hash" == "$local_hash" ]]; then
+                echo "Commit-pinned CDN is fresh; branch tag still lagging (attempt ${attempt})."
               fi
             done
+
+            if [[ "$verified" -ne 1 ]]; then
+              echo "jsDelivr cache still stale for ${file}" >&2
+              echo "Branch URL: ${cdn_url}" >&2
+              echo "Commit URL: ${cdn_sha_url}" >&2
+              failed=1
+            fi
           done
+
+          if [[ "$failed" -ne 0 ]]; then
+            echo "One or more files failed CDN verification." >&2
+            exit 1
+          fi
