@@ -16,6 +16,7 @@ const GROUP_NAMES = {
 // 自定义规则优先级最高，分组支持 proxy、direct、reject 等简写。
 const CUSTOM_RULES = [
   "DOMAIN-SUFFIX,anyrouter.top,proxy",
+  "DOMAIN-SUFFIX,agentrouter.org,proxy",
   "DOMAIN-SUFFIX,brew.sh,proxy",
   "DOMAIN-SUFFIX,netbird.io,proxy",
   "DOMAIN-SUFFIX,figma.com,proxy",
@@ -29,17 +30,21 @@ const RULE_PROVIDER_INTERVAL = 86400;
 const RULE_PROVIDER_BASE =
   "https://cdn.jsdelivr.net/gh/Loyalsoldier/clash-rules@release";
 
-// 国内 DNS：解析节点域名、国内站点
-const CN_DNS = [
+// 国内普通 DNS（UDP）：主 nameserver / bootstrap，直连解析不用 DoH
+const CN_DNS = ["223.5.5.5", "119.29.29.29"];
+
+// 国内 DoH：仅用于解析代理节点域名
+const CN_DOH = [
   "https://dns.alidns.com/dns-query",
   "https://doh.pub/dns-query",
 ];
 
-// 可信海外 DNS：仅作 fallback，用加密 DoH，避免裸 UDP 被干扰
-const TRUST_DNS = [
-  "https://1.1.1.1/dns-query",
-  "https://1.0.0.1/dns-query",
-  "https://8.8.8.8/dns-query",
+// fallback：境外/污染域名（与可用订阅一致）
+const FALLBACK_DNS = [
+  "https://cloudflare-dns.com/dns-query",
+  "https://dns.cloudflare.com/dns-query",
+  "https://dns.alidns.com/dns-query",
+  "https://doh.pub/dns-query",
 ];
 
 function main(params) {
@@ -244,9 +249,11 @@ function createHealthCheckGroup(name, type, proxies, options = {}) {
 function createDnsOptions() {
   return {
     enable: true,
-    // 关闭 H3 优先，减少 QUIC 抖动导致的偶发 DNS/TLS 失败
-    "prefer-h3": false,
     ipv6: false,
+    // 不跟规则分流 DNS 请求本身；DNS 结果仍尊重业务规则
+    "follow-rule": false,
+    "respect-rules": true,
+    "prefer-h3": false,
     "enhanced-mode": "fake-ip",
     "fake-ip-range": "198.18.0.1/16",
     "fake-ip-filter": [
@@ -283,43 +290,19 @@ function createDnsOptions() {
       "+.market.xiaomi.com",
       "proxy.golang.org",
     ],
-    // 仅用 IP，解析节点域名和其他 DNS 域名
-    "default-nameserver": ["223.5.5.5", "119.29.29.29", "114.114.114.114"],
     "use-hosts": true,
     "use-system-hosts": true,
+    // bootstrap：普通 UDP
+    "default-nameserver": CN_DNS,
+    // 解析代理节点 server：国内 DoH（与可用订阅一致）
+    "proxy-server-nameserver": CN_DOH,
+    // 主解析：普通 UDP，直连不走 DoH
     nameserver: CN_DNS,
-    fallback: TRUST_DNS,
+    fallback: FALLBACK_DNS,
     "fallback-filter": {
       geoip: true,
       "geoip-code": "CN",
-      ipcidr: ["240.0.0.0/4", "0.0.0.0/32", "127.0.0.1/32"],
-      domain: [
-        "+.google.com",
-        "+.googleapis.com",
-        "+.gstatic.com",
-        "+.facebook.com",
-        "+.youtube.com",
-        "+.ytimg.com",
-        "+.github.com",
-        "+.githubusercontent.com",
-        "+.twitter.com",
-        "+.x.com",
-        "+.telegram.org",
-        "+.t.me",
-        "+.cloudflare.com",
-        "+.openai.com",
-      ],
-    },
-    "nameserver-policy": {
-      // linux.do 国内 UDP/公共 DNS 易污染，仅该域名走指定 DoH
-      "+.linux.do": [
-        "https://i4cm5lqxfu.cloudflare-gateway.com/dns-query",
-      ],
-      "cloudflare-ech.com": CN_DNS,
-      // 内网与系统解析
-      "+.lan": "system",
-      "+.local": "system",
-      "localhost": "system",
+      geosite: ["gfw"],
     },
   };
 }
